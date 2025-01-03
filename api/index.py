@@ -1,11 +1,18 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, render_template
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, 
+    static_folder='../app/static',
+    template_folder='../app/templates'
+)
 
-# 配置静态文件目录
-app.static_folder = 'app/static'
-app.template_folder = 'app/templates'
+# 配置上传文件夹路径
+app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+# 配置最大文件大小为16MB
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+# 确保上传文件夹存在
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # 导入路由
 from app.routes import *
