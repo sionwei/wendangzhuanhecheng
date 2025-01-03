@@ -9,12 +9,9 @@ import json
 
 processor = DocumentProcessor()
 
-# 修改配置常量
-MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 提高到10MB
-
 def allowed_file(filename):
     """检查文件是否允许上传"""
-    ALLOWED_EXTENSIONS = {'doc', 'docx', 'pdf', 'txt', 'md'}
+    ALLOWED_EXTENSIONS = {'docx', 'txt', 'md'}  # 移除 pdf 和 doc
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
@@ -32,14 +29,23 @@ def upload_files():
             return jsonify({'status': 'error', 'message': '没有选择文件'})
         
         # 检查文件大小
+        total_size = 0
         for file in files:
             file.seek(0, 2)
             size = file.tell()
             file.seek(0)
-            if size > MAX_CONTENT_LENGTH:
+            total_size += size
+            
+            if size > current_app.config['MAX_CONTENT_LENGTH']:
                 return jsonify({
                     'status': 'error', 
-                    'message': f'文件过大: {file.filename}. 最大允许10MB'
+                    'message': f'文件过大: {file.filename}. 最大允许5MB'
+                })
+            
+            if total_size > current_app.config['MAX_CONTENT_LENGTH'] * 2:
+                return jsonify({
+                    'status': 'error',
+                    'message': '文件总大小超出限制'
                 })
         
         # 检查文件类型
