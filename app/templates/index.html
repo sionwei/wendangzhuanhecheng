@@ -639,10 +639,86 @@
                 </button>
             </div>
         </div>
+
+        <div class="upload-info">
+            <p>支持的文件格式: DOCX, TXT, MD</p>
+            <p>单个文件最大: 10MB</p>
+        </div>
     </div>
 
     <script>
         let currentDocId = null;
+
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 提高到10MB
+        const SUPPORTED_FORMATS = ['.docx', '.txt', '.md'];
+        
+        function validateFile(file) {
+            // 检查文件大小
+            if (file.size > MAX_FILE_SIZE) {
+                showError(`文件 ${file.name} 过大。最大允许 10MB`);
+                return false;
+            }
+            
+            // 检查文件类型
+            const ext = file.name.toLowerCase().match(/\.[^.]+$/);
+            if (!ext || !SUPPORTED_FORMATS.includes(ext[0])) {
+                showError(`不支持的文件类型: ${file.name}`);
+                return false;
+            }
+            
+            return true;
+        }
+        
+        async function uploadFiles(files) {
+            // 验证所有文件
+            for (const file of files) {
+                if (!validateFile(file)) {
+                    return;
+                }
+            }
+            
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('files', file);
+            }
+            
+            try {
+                showProgress();
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    updateProgress(100, '上传完成');
+                    setTimeout(() => {
+                        hideProgress();
+                        showSuccess(data.message);
+                    }, 500);
+                    
+                    // 更新预览
+                    updatePreview(data);
+                } else {
+                    hideProgress();
+                    showError(data.message);
+                }
+            } catch (error) {
+                hideProgress();
+                showError('上传失败，请重试');
+            }
+        }
+        
+        // 添加友好的错误提示
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
 
         // 拖拽上传
         const dropZone = document.querySelector('.drop-zone');
@@ -709,14 +785,6 @@
             successMessage.style.display = 'flex';
             setTimeout(() => {
                 successMessage.style.display = 'none';
-            }, 3000);
-        }
-
-        function showError(message) {
-            errorMessage.querySelector('span').textContent = message;
-            errorMessage.style.display = 'flex';
-            setTimeout(() => {
-                errorMessage.style.display = 'none';
             }, 3000);
         }
 
