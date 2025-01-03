@@ -1,0 +1,19 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "app/**/*.py",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "app/routes.py"
+        }
+    ],
+    "env": {
+        "FLASK_APP": "app/routes.py",
+        "FLASK_ENV": "production"
+    }
+} 

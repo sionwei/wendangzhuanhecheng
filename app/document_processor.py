@@ -18,6 +18,14 @@ class DocumentProcessor:
         self.documents = {}  # 存储处理后的文档
         self.previews = {}   # 存储预览内容
         self.temp_dir = tempfile.mkdtemp()  # 创建临时目录
+        
+    def __del__(self):
+        """清理临时文件"""
+        try:
+            import shutil
+            shutil.rmtree(self.temp_dir)
+        except:
+            pass
     
     def create_element(self, name):
         """创建XML元素"""
