@@ -18,7 +18,7 @@
 
 ## 使用限制
 
-- 单个文件最大支持 10MB
+- 单个文件最大支持 5MB
 - 仅支持 DOCX、TXT、MD 格式
 - 暂不支持 PDF 格式
 
@@ -33,9 +33,7 @@
 - 前端：HTML + CSS + JavaScript
 - 文档处理：
   - python-docx (Word文档处理)
-  - PyPDF2 (PDF文档处理)
   - markdown (Markdown处理)
-  - docx2pdf (PDF转换)
 
 ## 安装说明
 
