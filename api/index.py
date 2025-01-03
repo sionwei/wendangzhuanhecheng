@@ -1,11 +1,14 @@
-from flask import Flask
-from app import app as flask_app
+from flask import Flask, send_from_directory
+import os
 
-# 创建应用实例
 app = Flask(__name__)
 
-# 注册蓝图或路由
-app.register_blueprint(flask_app)
+# 配置静态文件目录
+app.static_folder = 'app/static'
+app.template_folder = 'app/templates'
+
+# 导入路由
+from app.routes import *
 
 # 添加错误处理
 @app.errorhandler(404)
@@ -21,5 +24,7 @@ def internal_error(error):
 def health_check():
     return {"status": "healthy"}, 200
 
-if __name__ == '__main__':
-    app.run() 
+# 处理根路由
+@app.route('/')
+def index():
+    return render_template('index.html') 
