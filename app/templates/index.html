@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>文档合成工具</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        :root {
+            --primary-color: #0071e3;
+            --primary-gradient: linear-gradient(135deg, #0077ED 0%, #0063C6 100%);
+            --hover-gradient: linear-gradient(135deg, #0086FF 0%, #0071E3 100%);
+            --background-color: #fbfbfd;
+            --card-background: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --border-color: #d2d2d7;
+            --success-color: #28cd41;
+            --error-color: #ff3b30;
+            --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
+            --card-hover-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 48px;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 21px;
+            color: var(--text-secondary);
+            margin: -32px 0 48px;
+            font-weight: 400;
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 32px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 48px 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(to bottom, #fafafa, #ffffff);
+            text-align: center;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary-color);
+            background: rgba(0, 113, 227, 0.05);
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--primary-color);
+            background: rgba(0, 113, 227, 0.1);
+            transform: scale(1.02);
+        }
+
+        .drop-zone i {
+            font-size: 56px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .drop-zone:hover i {
+            transform: translateY(-4px);
+        }
+
+        .drop-zone p {
+            margin: 8px 0;
+            font-size: 17px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .progress-container {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar .progress {
+            position: absolute;
+            height: 100%;
+            background: var(--primary-gradient);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .options {
+            margin: 32px 0;
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 24px;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 17px;
+        }
+
+        .radio-label input[type="radio"] {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            margin: 0;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .radio-label input[type="radio"]:checked {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            box-shadow: inset 0 0 0 5px white;
+        }
+
+        .radio-label:hover input[type="radio"]:not(:checked) {
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 980px;
+            font-size: 17px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            min-width: 140px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--hover-gradient);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.loading {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            right: 16px;
+        }
+
+        .file-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .file-item {
+            padding: 16px;
+            background: var(--background-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s ease;
+            font-size: 15px;
+        }
+
+        .file-item:hover {
+            background: #f2f2f7;
+        }
+
+        .file-item i {
+            color: var(--primary-color);
+            font-size: 24px;
+        }
+
+        .preview-content {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 24px;
+            background: var(--background-color);
+            border-radius: 12px;
+            font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .section-title {
+            font-size: 21px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+            font-size: 24px;
+        }
+
+        .export-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .export-buttons .btn {
+            width: 100%;
+            padding: 16px;
+        }
+
+        .export-buttons .btn i {
+            font-size: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .status-message {
+            padding: 16px;
+            border-radius: 12px;
+            margin: 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: rgba(40, 205, 65, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-message.error {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--error-color);
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--background-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 40px auto;
+            }
+
+            h1 {
+                font-size: 36px;
+                margin-bottom: 32px;
+            }
+
+            .subtitle {
+                font-size: 17px;
+                margin: -24px 0 32px;
+            }
+
+            .card {
+                padding: 24px;
+                margin-bottom: 24px;
+            }
+
+            .drop-zone {
+                padding: 32px 16px;
+            }
+
+            .options {
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+            }
+
+            .export-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .custom-style-options {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .style-section {
+            background: var(--background-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .style-section h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .style-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .style-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .style-item label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .style-item select,
+        .style-item input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 15px;
+            color: var(--text-primary);
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .style-item select:hover,
+        .style-item input:hover {
+            border-color: var(--primary-color);
+        }
+
+        .style-item select:focus,
+        .style-item input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .style-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>文档合成工具</h1>
+        <p class="subtitle">轻松合并和转换您的文档</p>
+        
+        <div class="card upload-container">
+            <form id="upload-form" action="/api/upload" method="post" enctype="multipart/form-data">
+                <div class="drop-zone" onclick="document.getElementById('file-input').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击或拖拽文件到此处上传</p>
+                    <p style="color: var(--text-secondary); font-size: 15px; margin-top: 8px;">
+                        支持 Word、PDF、TXT、Markdown 格式
+                    </p>
+                </div>
+                <input id="file-input" type="file" name="files" multiple accept=".doc,.docx,.pdf,.txt,.md" class="file-input" onchange="updateFileList(this)">
+                
+                <div class="progress-container" id="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="progress"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">准备上传...</div>
+                </div>
+
+                <div class="status-message success" id="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    <span>操作成功</span>
+                </div>
+
+                <div class="status-message error" id="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>操作失败</span>
+                </div>
+                
+                <div class="options">
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="layout_type" value="original">
+                            <span>保持原文档排版</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="layout_type" value="custom" checked>
+                            <span>自定义排版</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="custom-style-options" class="custom-style-options">
+                    <div class="style-section">
+                        <h3>字体设置</h3>
+                        <div class="style-group">
+                            <div class="style-item">
+                                <label>中文字体</label>
+                                <select name="font_family_cn">
+                                    <option value="宋体">宋体</option>
+                                    <option value="黑体">黑体</option>
+                                    <option value="微软雅黑">微软雅黑</option>
+                                    <option value="楷体">楷体</option>
+                                    <option value="仿宋">仿宋</option>
+                                </select>
+                            </div>
+                            <div class="style-item">
+                                <label>英文字体</label>
+                                <select name="font_family_en">
+                                    <option value="Times New Roman">Times New Roman</option>
+                                    <option value="Arial">Arial</option>
+                                    <option value="Calibri">Calibri</option>
+                                    <option value="Georgia">Georgia</option>
+                                </select>
+                            </div>
+                            <div class="style-item">
+                                <label>字号 (pt)</label>
+                                <input type="number" name="font_size" value="12" min="8" max="72" step="0.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="style-section">
+                        <h3>段落设置</h3>
+                        <div class="style-group">
+                            <div class="style-item">
+                                <label>对齐方式</label>
+                                <select name="alignment">
+                                    <option value="left">左对齐</option>
+                                    <option value="center">居中对齐</option>
+                                    <option value="right">右对齐</option>
+                                    <option value="justify">两端对齐</option>
+                                </select>
+                            </div>
+                            <div class="style-item">
+                                <label>行间距类型</label>
+                                <select name="line_spacing_rule">
+                                    <option value="multiple">倍数</option>
+                                    <option value="exact">固定值</option>
+                                </select>
+                            </div>
+                            <div class="style-item">
+                                <label>行间距值</label>
+                                <input type="number" name="line_spacing" value="1.5" min="1" max="5" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="style-section">
+                        <h3>间距设置</h3>
+                        <div class="style-group">
+                            <div class="style-item">
+                                <label>段前间距 (pt)</label>
+                                <input type="number" name="space_before" value="0" min="0" max="100" step="1">
+                            </div>
+                            <div class="style-item">
+                                <label>段后间距 (pt)</label>
+                                <input type="number" name="space_after" value="0" min="0" max="100" step="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="style-section">
+                        <h3>缩进设置</h3>
+                        <div class="style-group">
+                            <div class="style-item">
+                                <label>首行缩进 (cm)</label>
+                                <input type="number" name="first_line_indent" value="2" min="0" max="10" step="0.1">
+                            </div>
+                            <div class="style-item">
+                                <label>左侧缩进 (cm)</label>
+                                <input type="number" name="left_indent" value="0" min="0" max="10" step="0.1">
+                            </div>
+                            <div class="style-item">
+                                <label>右侧缩进 (cm)</label>
+                                <input type="number" name="right_indent" value="0" min="0" max="10" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <button type="submit" class="btn" id="upload-btn">
+                        <i class="fas fa-upload"></i>
+                        上传并合成
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card file-list" id="file-list">
+            <div class="section-title">
+                <i class="fas fa-file-alt"></i>
+                已选择文件
+            </div>
+            <!-- 文件列表将通过JavaScript动态添加 -->
+        </div>
+
+        <div class="card preview" id="preview">
+            <div class="section-title">
+                <i class="fas fa-eye"></i>
+                预览
+            </div>
+            <div class="preview-content">
+                <!-- 预览内容将通过JavaScript动态添加 -->
+            </div>
+        </div>
+
+        <div class="card export-options">
+            <div class="section-title">
+                <i class="fas fa-download"></i>
+                导出选项
+            </div>
+            <div class="export-buttons">
+                <button class="btn" onclick="exportDoc('docx')">
+                    <i class="far fa-file-word"></i>
+                    Word 文档
+                </button>
+                <button class="btn" onclick="exportDoc('pdf')">
+                    <i class="far fa-file-pdf"></i>
+                    PDF 文档
+                </button>
+                <button class="btn" onclick="exportDoc('txt')">
+                    <i class="far fa-file-alt"></i>
+                    文本文档
+                </button>
+                <button class="btn" onclick="exportDoc('md')">
+                    <i class="fab fa-markdown"></i>
+                    Markdown
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDocId = null;
+
+        // 拖拽上传
+        const dropZone = document.querySelector('.drop-zone');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress');
+        const progressText = document.getElementById('progress-text');
+        const uploadBtn = document.getElementById('upload-btn');
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('drag-over');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('drag-over');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            document.getElementById('file-input').files = files;
+            updateFileList(document.getElementById('file-input'));
+        }
+
+        function showProgress() {
+            progressContainer.style.display = 'block';
+            uploadBtn.classList.add('loading');
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+        }
+
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+            uploadBtn.classList.remove('loading');
+        }
+
+        function updateProgress(percent, text) {
+            progressBar.style.width = `${percent}%`;
+            progressText.textContent = text;
+        }
+
+        function showSuccess(message) {
+            successMessage.querySelector('span').textContent = message;
+            successMessage.style.display = 'flex';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function showError(message) {
+            errorMessage.querySelector('span').textContent = message;
+            errorMessage.style.display = 'flex';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function updateFileList(input) {
+            const fileList = document.getElementById('file-list');
+            const files = Array.from(input.files);
+            
+            let html = `
+                <div class="section-title">
+                    <i class="fas fa-file-alt"></i>
+                    已选择文件
+                </div>
+            `;
+            
+            if (files.length === 0) {
+                html += `
+                    <div class="file-item fade-in" style="color: var(--text-secondary);">
+                        <i class="fas fa-info-circle"></i>
+                        <span>暂无选择文件</span>
+                    </div>
+                `;
+            } else {
+                files.forEach(file => {
+                    let icon = 'far fa-file';
+                    if (file.name.endsWith('.docx')) icon = 'far fa-file-word';
+                    else if (file.name.endsWith('.pdf')) icon = 'far fa-file-pdf';
+                    else if (file.name.endsWith('.txt')) icon = 'far fa-file-alt';
+                    else if (file.name.endsWith('.md')) icon = 'fab fa-markdown';
+                    
+                    html += `
+                        <div class="file-item fade-in">
+                            <i class="${icon}"></i>
+                            <span>${file.name}</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            fileList.innerHTML = html;
+        }
+
+        // 初始化文件列表
+        updateFileList({ files: [] });
+
+        // 处理排版选项的显示/隐藏
+        document.querySelectorAll('input[name="layout_type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const customOptions = document.getElementById('custom-style-options');
+                if (this.value === 'custom') {
+                    customOptions.style.display = 'block';
+                } else {
+                    customOptions.style.display = 'none';
+                }
+            });
+        });
+
+        // 初始化显示自定义选项
+        document.getElementById('custom-style-options').style.display = 
+            document.querySelector('input[name="layout_type"]:checked').value === 'custom' ? 'block' : 'none';
+
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            // 如果是自定义排版，添加样式配置
+            if (formData.get('layout_type') === 'custom') {
+                const styleConfig = {
+                    font_family_cn: formData.get('font_family_cn'),
+                    font_family_en: formData.get('font_family_en'),
+                    font_size: formData.get('font_size'),
+                    alignment: formData.get('alignment'),
+                    line_spacing_rule: formData.get('line_spacing_rule'),
+                    line_spacing: formData.get('line_spacing'),
+                    space_before: formData.get('space_before'),
+                    space_after: formData.get('space_after'),
+                    first_line_indent: formData.get('first_line_indent'),
+                    left_indent: formData.get('left_indent'),
+                    right_indent: formData.get('right_indent')
+                };
+                formData.set('style_config', JSON.stringify(styleConfig));
+            }
+            
+            showProgress();
+            
+            try {
+                // 模拟上传进度
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 5;
+                    if (progress <= 90) {
+                        updateProgress(progress, '正在上传...');
+                    }
+                }, 200);
+
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                clearInterval(progressInterval);
+                
+                if (data.status === 'success') {
+                    updateProgress(100, '上传完成');
+                    setTimeout(() => {
+                        hideProgress();
+                        showSuccess('文件上传并合成成功');
+                    }, 500);
+
+                    currentDocId = data.doc_id;
+                    const preview = document.getElementById('preview');
+                    preview.innerHTML = `
+                        <div class="section-title">
+                            <i class="fas fa-eye"></i>
+                            预览
+                        </div>
+                        <div class="preview-content fade-in">${data.preview}</div>
+                    `;
+                } else {
+                    hideProgress();
+                    showError(data.message);
+                }
+            } catch (error) {
+                hideProgress();
+                showError(error.message);
+            }
+        });
+
+        async function exportDoc(format) {
+            if (!currentDocId) {
+                showError('请先上传并合成文档！');
+                return;
+            }
+            
+            try {
+                showProgress();
+                updateProgress(50, '正在导出...');
+                
+                window.location.href = `/api/export/${currentDocId}?format=${format}`;
+                
+                setTimeout(() => {
+                    updateProgress(100, '导出完成');
+                    setTimeout(() => {
+                        hideProgress();
+                        showSuccess('文件导出成功');
+                    }, 500);
+                }, 1000);
+            } catch (error) {
+                hideProgress();
+                showError('导出失败：' + error.message);
+            }
+        }
+    </script>
+</body>
+</html> 
